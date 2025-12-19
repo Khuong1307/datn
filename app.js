@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderTierList(data.settings);
             updateCharts(data);
             updateAlerts(data);
+            updateNotificationPanel(data);
         }
     }, (error) => {
         console.error('Firebase error:', error);
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initCharts();
     initNavigation();
     initDeviceControls();
+    initDropdowns();
 });
 
 // Update dashboard statistics
@@ -694,3 +696,158 @@ document.addEventListener('DOMContentLoaded', function () {
         initVatSave();
     }, 1000);
 });
+
+// ===== Dropdown Functions =====
+function initDropdowns() {
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationWrapper = document.getElementById('notificationWrapper');
+
+    const userInfo = document.getElementById('userInfo');
+    const userDropdown = document.getElementById('userDropdown');
+    const userInfoWrapper = document.getElementById('userInfoWrapper');
+
+    const clearAllBtn = document.getElementById('clearAllNotifications');
+
+    // Notification bell click
+    if (notificationBell) {
+        notificationBell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('active');
+            userDropdown?.classList.remove('active');
+            userInfoWrapper?.classList.remove('active');
+        });
+    }
+
+    // User info click
+    if (userInfo) {
+        userInfo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('active');
+            userInfoWrapper.classList.toggle('active');
+            notificationDropdown?.classList.remove('active');
+        });
+    }
+
+    // Clear all notifications
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const notificationList = document.getElementById('notificationList');
+            const notificationBadge = document.getElementById('notificationBadge');
+            if (notificationList) {
+                notificationList.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>Không có thông báo mới</p>
+                    </div>
+                `;
+            }
+            if (notificationBadge) {
+                notificationBadge.classList.add('hidden');
+            }
+        });
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!notificationWrapper?.contains(e.target)) {
+            notificationDropdown?.classList.remove('active');
+        }
+        if (!userInfoWrapper?.contains(e.target)) {
+            userDropdown?.classList.remove('active');
+            userInfoWrapper?.classList.remove('active');
+        }
+    });
+}
+
+// Update notification panel with alerts data
+function updateNotificationPanel(data) {
+    const notificationList = document.getElementById('notificationList');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const lastUpdateTime = document.getElementById('lastUpdateTime');
+
+    if (!notificationList || !data.settings?.thresholds) return;
+
+    const warningThreshold = data.settings.thresholds.warning;
+    const criticalThreshold = data.settings.thresholds.critical;
+    const totalPower = data.total?.power || 0;
+
+    let notifications = [];
+
+    // Check total power
+    if (totalPower >= criticalThreshold) {
+        notifications.push({
+            type: 'critical',
+            icon: 'fa-bolt',
+            title: 'Quá tải nghiêm trọng!',
+            desc: `Tổng công suất ${totalPower}W vượt ngưỡng ${criticalThreshold}W`,
+            time: 'Vừa xong'
+        });
+    } else if (totalPower >= warningThreshold) {
+        notifications.push({
+            type: 'warning',
+            icon: 'fa-exclamation-circle',
+            title: 'Công suất cao',
+            desc: `Tổng công suất ${totalPower}W vượt ngưỡng cảnh báo`,
+            time: '1 phút trước'
+        });
+    }
+
+    // Check each room
+    if (data.rooms) {
+        Object.values(data.rooms).forEach(room => {
+            if (room.power >= warningThreshold) {
+                notifications.push({
+                    type: 'warning',
+                    icon: 'fa-door-open',
+                    title: `${room.name} công suất cao`,
+                    desc: `${room.power}W đang hoạt động`,
+                    time: '2 phút trước'
+                });
+            }
+        });
+    }
+
+    // Add system info
+    if (notifications.length === 0) {
+        notifications.push({
+            type: 'success',
+            icon: 'fa-check-circle',
+            title: 'Hệ thống hoạt động bình thường',
+            desc: 'Tất cả chỉ số trong ngưỡng cho phép',
+            time: 'Vừa xong'
+        });
+    }
+
+    // Render notifications
+    notificationList.innerHTML = notifications.map(n => `
+        <div class="notification-item">
+            <div class="notification-item-icon ${n.type}">
+                <i class="fas ${n.icon}"></i>
+            </div>
+            <div class="notification-item-content">
+                <div class="notification-item-title">${n.title}</div>
+                <div class="notification-item-desc">${n.desc}</div>
+                <div class="notification-item-time">${n.time}</div>
+            </div>
+        </div>
+    `).join('');
+
+    // Update badge
+    const alertCount = notifications.filter(n => n.type === 'critical' || n.type === 'warning').length;
+    if (notificationBadge) {
+        if (alertCount > 0) {
+            notificationBadge.textContent = alertCount;
+            notificationBadge.classList.remove('hidden');
+        } else {
+            notificationBadge.classList.add('hidden');
+        }
+    }
+
+    // Update time
+    if (lastUpdateTime) {
+        const now = new Date();
+        lastUpdateTime.textContent = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    }
+}
