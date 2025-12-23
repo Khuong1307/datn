@@ -98,6 +98,11 @@ function renderRooms(data) {
             });
         }
 
+        // Get electrical metrics with defaults
+        const voltage = room.voltage ?? 0;
+        const current = room.current ?? 0;
+        const energy = room.energy ?? 0;
+
         roomCard.innerHTML = `
             <div class="room-header">
                 <div class="room-info">
@@ -113,6 +118,29 @@ function renderRooms(data) {
                 <div class="room-power">
                     <div class="power-value">${room.power}</div>
                     <div class="power-unit">Watts</div>
+                </div>
+            </div>
+            <div class="room-metrics">
+                <div class="metric-item voltage">
+                    <div class="metric-icon"><i class="fas fa-bolt"></i></div>
+                    <div class="metric-info">
+                        <span class="metric-value">${voltage.toFixed(1)}</span>
+                        <span class="metric-label">Điện áp (V)</span>
+                    </div>
+                </div>
+                <div class="metric-item current">
+                    <div class="metric-icon"><i class="fas fa-wave-square"></i></div>
+                    <div class="metric-info">
+                        <span class="metric-value">${current.toFixed(3)}</span>
+                        <span class="metric-label">Dòng điện (A)</span>
+                    </div>
+                </div>
+                <div class="metric-item energy">
+                    <div class="metric-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="metric-info">
+                        <span class="metric-value">${energy.toFixed(3)}</span>
+                        <span class="metric-label">Điện năng (kWh)</span>
+                    </div>
                 </div>
             </div>
             <div class="room-devices">${devicesHtml}</div>
