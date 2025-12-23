@@ -807,6 +807,85 @@ body {
     color: var(--text-secondary);
 }
 
+/* ===== Room Electrical Metrics ===== */
+.room-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.metric-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--glass-bg);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-normal);
+}
+
+.metric-item:hover {
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+}
+
+.metric-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.metric-item.voltage .metric-icon {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--warning);
+}
+
+.metric-item.current .metric-icon {
+    background: rgba(99, 137, 255, 0.15);
+    color: var(--primary-light);
+}
+
+.metric-item.energy .metric-icon {
+    background: rgba(46, 213, 137, 0.15);
+    color: var(--success);
+}
+
+.metric-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.metric-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.metric-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Responsive for small screens */
+@media (max-width: 480px) {
+    .room-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
 .room-devices {
     padding: var(--spacing-lg);
 }
