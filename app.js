@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initCharts();
     initNavigation();
     initDeviceControls();
+    initInfoModal();
 });
 
 // Update dashboard statistics
@@ -88,7 +89,6 @@ function renderRooms(data) {
                             <div class="device-icon"><i class="fas ${icon}"></i></div>
                             <div>
                                 <div class="device-name">${device.name}</div>
-                                <div class="device-power">${device.power}W / ${device.max_power}W max</div>
                             </div>
                         </div>
                         <div class="device-toggle ${device.state ? 'on' : ''}" 
@@ -182,14 +182,29 @@ function updateAlerts(data) {
     const totalPower = data.total?.power || 0;
 
     let alertsHtml = '';
+    let notifications = []; // For notification dropdown
 
     // Check total power
     if (totalPower >= criticalThreshold) {
         alertsHtml += createAlert('critical', 'fa-bolt', 'Quá tải nghiêm trọng',
             `Tổng công suất ${totalPower}W vượt ngưỡng nguy hiểm ${criticalThreshold}W`, 'Ngay bây giờ');
+        notifications.push({
+            type: 'critical',
+            icon: 'fa-bolt',
+            title: 'Quá tải nghiêm trọng',
+            desc: `Tổng: ${totalPower}W > ${criticalThreshold}W`,
+            time: 'Ngay bây giờ'
+        });
     } else if (totalPower >= warningThreshold) {
         alertsHtml += createAlert('warning', 'fa-exclamation-circle', 'Công suất cao',
             `Tổng công suất ${totalPower}W vượt ngưỡng cảnh báo ${warningThreshold}W`, 'Vừa xong');
+        notifications.push({
+            type: 'warning',
+            icon: 'fa-exclamation-circle',
+            title: 'Công suất cao',
+            desc: `Tổng: ${totalPower}W > ${warningThreshold}W`,
+            time: 'Vừa xong'
+        });
     }
 
     // Check each room
@@ -198,6 +213,13 @@ function updateAlerts(data) {
             if (room.power >= warningThreshold) {
                 alertsHtml += createAlert('warning', 'fa-exclamation-circle', 'Phòng công suất cao',
                     `${room.name}: ${room.power}W vượt ngưỡng cảnh báo`, '1 phút trước');
+                notifications.push({
+                    type: 'warning',
+                    icon: 'fa-exclamation-circle',
+                    title: 'Phòng công suất cao',
+                    desc: `${room.name}: ${room.power}W vượt ngưỡng`,
+                    time: '1 phút trước'
+                });
             }
         });
     }
@@ -221,6 +243,9 @@ function updateAlerts(data) {
     }
 
     alertList.innerHTML = alertsHtml;
+
+    // Update notification dropdown
+    updateNotificationDropdown(notifications);
 }
 
 function createAlert(type, icon, title, desc, time) {
@@ -438,6 +463,12 @@ function initPowerChart() {
     const hours = Array.from({ length: 24 }, (_, i) => `${i}:00`);
     const mockData = generateMockPowerData(1724);
 
+    // Create gradient for fill
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(99, 137, 255, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(99, 137, 255, 0.15)');
+    gradient.addColorStop(1, 'rgba(99, 137, 255, 0)');
+
     powerChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -446,23 +477,72 @@ function initPowerChart() {
                 label: 'Công suất (W)',
                 data: mockData,
                 borderColor: 'rgb(99, 137, 255)',
-                backgroundColor: 'rgba(99, 137, 255, 0.1)',
+                backgroundColor: gradient,
                 fill: true,
                 tension: 0.4,
-                borderWidth: 2,
+                borderWidth: 3,
                 pointRadius: 0,
-                pointHoverRadius: 6
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(99, 137, 255)',
+                pointHoverBorderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
-                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
             },
-            interaction: { intersect: false, mode: 'index' }
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 17, 25, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: 'rgba(255,255,255,0.8)',
+                    borderColor: 'rgba(99, 137, 255, 0.5)',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        title: (items) => `${items[0].label}`,
+                        label: (item) => `⚡ Công suất: ${item.raw.toLocaleString()} W`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255,255,255,0.03)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.5)',
+                        font: { size: 11 },
+                        maxRotation: 0
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255,255,255,0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.5)',
+                        font: { size: 11 },
+                        callback: (value) => value.toLocaleString() + ' W'
+                    },
+                    beginAtZero: true
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
         }
     });
 }
@@ -473,7 +553,46 @@ function initDistributionChart() {
 
     const roomNames = ['Phòng 1', 'Phòng 2', 'Phòng 3', 'Phòng 4'];
     const roomPowers = [862, 862, 0, 0];
-    const colors = ['#6389ff', '#2ed589', '#fbbf24', '#ef5350'];
+    const colors = [
+        'rgba(99, 137, 255, 0.9)',
+        'rgba(46, 213, 137, 0.9)',
+        'rgba(251, 191, 36, 0.9)',
+        'rgba(239, 83, 80, 0.9)'
+    ];
+    const hoverColors = [
+        'rgba(99, 137, 255, 1)',
+        'rgba(46, 213, 137, 1)',
+        'rgba(251, 191, 36, 1)',
+        'rgba(239, 83, 80, 1)'
+    ];
+
+    // Center text plugin
+    const centerTextPlugin = {
+        id: 'centerText',
+        beforeDraw: function (chart) {
+            const ctx = chart.ctx;
+            const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+            const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+
+            const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Total value
+            ctx.font = 'bold 24px Inter, sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(total.toLocaleString() + 'W', centerX, centerY - 8);
+
+            // Label
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fillText('Tổng công suất', centerX, centerY + 15);
+
+            ctx.restore();
+        }
+    };
 
     distributionChart = new Chart(ctx, {
         type: 'doughnut',
@@ -482,21 +601,57 @@ function initDistributionChart() {
             datasets: [{
                 data: roomPowers,
                 backgroundColor: colors,
-                borderWidth: 0,
-                hoverOffset: 10
+                hoverBackgroundColor: hoverColors,
+                borderWidth: 2,
+                borderColor: 'rgba(15, 17, 25, 0.8)',
+                hoverBorderColor: '#fff',
+                hoverOffset: 15,
+                spacing: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%',
+            cutout: '68%',
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: 'rgba(255,255,255,0.7)', padding: 15, usePointStyle: true }
+                    labels: {
+                        color: 'rgba(255,255,255,0.8)',
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 12, weight: '500' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 17, 25, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: 'rgba(255,255,255,0.8)',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    padding: 14,
+                    cornerRadius: 10,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function (context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const value = context.raw;
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `⚡ ${value.toLocaleString()} W (${percentage}%)`;
+                        }
+                    }
                 }
             }
-        }
+        },
+        plugins: [centerTextPlugin]
     });
 }
 
@@ -721,4 +876,125 @@ document.addEventListener('DOMContentLoaded', function () {
         initThresholdSave();
         initVatSave();
     }, 1000);
+});
+
+// ===== Info Modal =====
+function initInfoModal() {
+    const infoBtn = document.getElementById('infoBtn');
+    const infoModal = document.getElementById('infoModal');
+    const infoModalClose = document.getElementById('infoModalClose');
+
+    if (infoBtn && infoModal) {
+        // Open modal
+        infoBtn.addEventListener('click', () => {
+            infoModal.classList.add('active');
+        });
+
+        // Close modal with X button
+        if (infoModalClose) {
+            infoModalClose.addEventListener('click', () => {
+                infoModal.classList.remove('active');
+            });
+        }
+
+        // Close modal when clicking overlay
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) {
+                infoModal.classList.remove('active');
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && infoModal.classList.contains('active')) {
+                infoModal.classList.remove('active');
+            }
+        });
+    }
+}
+
+// ===== Notification Dropdown =====
+function initNotifications() {
+    const bellBtn = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+    const wrapper = document.getElementById('notificationWrapper');
+
+    if (bellBtn && dropdown) {
+        // Toggle dropdown on click
+        bellBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        // Close dropdown with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
+}
+
+function updateNotificationDropdown(notifications) {
+    const notifList = document.getElementById('notificationList');
+    const notifBadge = document.getElementById('notificationBadge');
+    const notifCount = document.getElementById('notificationCount');
+
+    if (!notifList) return;
+
+    const count = notifications.length;
+
+    // Update badge
+    if (notifBadge) {
+        notifBadge.textContent = count;
+        if (count === 0) {
+            notifBadge.classList.add('hidden');
+        } else {
+            notifBadge.classList.remove('hidden');
+        }
+    }
+
+    // Update count text
+    if (notifCount) {
+        notifCount.textContent = count > 0 ? `${count} cảnh báo` : 'Không có cảnh báo';
+    }
+
+    // Build notification items
+    if (count === 0) {
+        notifList.innerHTML = `
+            <div class="notification-empty">
+                <i class="fas fa-check-circle"></i>
+                <p>Hệ thống bình thường</p>
+            </div>
+        `;
+    } else {
+        let html = '';
+        notifications.forEach(n => {
+            html += `
+                <div class="notification-item ${n.type}">
+                    <div class="notif-icon">
+                        <i class="fas ${n.icon}"></i>
+                    </div>
+                    <div class="notif-content">
+                        <div class="notif-title">${n.title}</div>
+                        <div class="notif-desc">${n.desc}</div>
+                        <div class="notif-time">${n.time}</div>
+                    </div>
+                </div>
+            `;
+        });
+        notifList.innerHTML = html;
+    }
+}
+
+// Initialize notifications on page load
+document.addEventListener('DOMContentLoaded', function () {
+    initNotifications();
 });
