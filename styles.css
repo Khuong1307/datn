@@ -275,6 +275,10 @@ body {
     gap: var(--spacing-md);
 }
 
+.notification-wrapper {
+    position: relative;
+}
+
 .notification-bell {
     position: relative;
     width: 42px;
@@ -296,16 +300,159 @@ body {
     position: absolute;
     top: -4px;
     right: -4px;
-    width: 20px;
+    min-width: 20px;
     height: 20px;
+    padding: 0 5px;
     background: var(--danger);
-    border-radius: 50%;
+    border-radius: 10px;
     font-size: 0.7rem;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid var(--bg-primary);
+}
+
+.notification-badge.hidden {
+    display: none;
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 340px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-normal);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notification-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    color: white;
+}
+
+.notification-header h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.notification-count {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background: var(--glass-bg);
+}
+
+.notification-item.warning .notif-icon {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--warning);
+}
+
+.notification-item.critical .notif-icon {
+    background: rgba(239, 83, 80, 0.15);
+    color: var(--danger);
+}
+
+.notification-item.info .notif-icon {
+    background: rgba(59, 178, 255, 0.15);
+    color: var(--info);
+}
+
+.notification-item.success .notif-icon {
+    background: rgba(46, 213, 137, 0.15);
+    color: var(--success);
+}
+
+.notif-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notif-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.notif-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.notif-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.notification-empty {
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.notification-empty i {
+    font-size: 2rem;
+    color: var(--success);
+    margin-bottom: var(--spacing-sm);
+}
+
+.notification-empty p {
+    font-size: 0.85rem;
 }
 
 .user-avatar {
@@ -1717,4 +1864,237 @@ body {
 .btn-save-sm {
     padding: var(--spacing-sm) var(--spacing-lg);
     font-size: 0.9rem;
+}
+
+/* ===== Info Button ===== */
+.info-btn {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-size: 1.1rem;
+    color: white;
+}
+
+.info-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 20px var(--primary-glow);
+}
+
+/* ===== Info Modal ===== */
+.info-modal-content {
+    max-width: 480px;
+    width: 90%;
+    max-height: 90vh;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    overflow-y: auto;
+    margin: auto;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    z-index: 10;
+}
+
+.modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    transform: rotate(90deg);
+}
+
+.info-modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    padding: var(--spacing-xl);
+    text-align: center;
+}
+
+.info-modal-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-md);
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.info-modal-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.info-modal-header h2 {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.info-modal-body {
+    padding: var(--spacing-xl);
+}
+
+.project-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, rgba(99, 137, 255, 0.15), rgba(59, 178, 255, 0.15));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.project-title i {
+    font-size: 1.5rem;
+    color: var(--warning);
+}
+
+.project-title h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.project-details {
+    margin-bottom: var(--spacing-lg);
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.team-section,
+.advisor-section {
+    margin-top: var(--spacing-lg);
+}
+
+.team-section h4,
+.advisor-section h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.team-section h4 i {
+    color: var(--success);
+}
+
+.advisor-section h4 i {
+    color: var(--info);
+}
+
+.team-members {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.member-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+}
+
+.member-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateX(5px);
+}
+
+.member-avatar,
+.advisor-avatar {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, var(--success), var(--success-light));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.advisor-avatar {
+    background: linear-gradient(135deg, var(--info), var(--info-light));
+}
+
+.member-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.member-name,
+.advisor-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.member-id {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.advisor-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
 }
