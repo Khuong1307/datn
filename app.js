@@ -1,12 +1,39 @@
 // Power Management App - Firebase Realtime Database
 let powerChart = null;
 let distributionChart = null;
+let lastUpdateTime = Date.now(); // Thời điểm cập nhật dữ liệu
+
+// Lưu lịch sử công suất thực (tối đa 60 điểm dữ liệu = 60 lần cập nhật)
+let powerHistory = [];
+let timeLabels = [];
+const MAX_HISTORY_POINTS = 60;
+
+// Hàm tính thời gian tương đối
+function getRelativeTime(timestamp) {
+    const now = Date.now();
+    const diff = Math.floor((now - timestamp) / 1000); // Giây
+
+    if (diff < 5) return 'Ngay bây giờ';
+    if (diff < 60) return `${diff} giây trước`;
+    if (diff < 120) return '1 phút trước';
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 7200) return '1 giờ trước';
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+    return `${Math.floor(diff / 86400)} ngày trước`;
+}
+
+// Hàm format thời gian hiện tại (HH:MM:SS)
+function getCurrentTimeLabel() {
+    const now = new Date();
+    return now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     // Listen for realtime data from Firebase
     window.powerRef.on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
+            lastUpdateTime = Date.now(); // Cập nhật timestamp
             updateStats(data);
             renderRooms(data);
             renderTierList(data.settings);
@@ -26,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Update dashboard statistics
 function updateStats(data) {
-    const totalPower = document.getElementById('totalPower');
+    const totalPowerEl = document.getElementById('totalPower');
     const monthlyCost = document.getElementById('monthlyCost');
     const activeRooms = document.getElementById('activeRooms');
     const monthlyEnergy = document.getElementById('monthlyEnergy');
@@ -35,16 +62,22 @@ function updateStats(data) {
     const monthKwh = document.getElementById('monthKwh');
     const monthCost = document.getElementById('monthCost');
 
-    if (totalPower) totalPower.textContent = formatNumber(data.total?.power || 0);
-    if (monthlyCost) monthlyCost.textContent = formatNumber(data.total?.monthly_cost || 0);
-    if (monthlyEnergy) monthlyEnergy.textContent = formatNumber(data.energy?.current?.month_kwh || 0);
-
+    // Tính tổng công suất từ tất cả các phòng
+    let calculatedTotalPower = 0;
     let active = 0;
     if (data.rooms) {
         Object.values(data.rooms).forEach(room => {
+            calculatedTotalPower += room.power || 0;
             if (room.power > 0) active++;
         });
     }
+
+    // Lưu lại để các hàm khác dùng
+    data.calculatedTotalPower = calculatedTotalPower;
+
+    if (totalPowerEl) totalPowerEl.textContent = formatNumber(calculatedTotalPower);
+    if (monthlyCost) monthlyCost.textContent = formatNumber(data.total?.monthly_cost || 0);
+    if (monthlyEnergy) monthlyEnergy.textContent = formatNumber(data.energy?.current?.month_kwh || 0);
     if (activeRooms) activeRooms.textContent = active;
 
     if (data.energy?.current) {
@@ -179,7 +212,9 @@ function updateAlerts(data) {
 
     const warningThreshold = data.settings.thresholds.warning;
     const criticalThreshold = data.settings.thresholds.critical;
-    const totalPower = data.total?.power || 0;
+    // Sử dụng tổng công suất đã tính từ các phòng
+    const totalPower = data.calculatedTotalPower || 0;
+    const currentTime = getRelativeTime(lastUpdateTime); // Thời gian cập nhật
 
     let alertsHtml = '';
     let notifications = []; // For notification dropdown
@@ -187,23 +222,23 @@ function updateAlerts(data) {
     // Check total power
     if (totalPower >= criticalThreshold) {
         alertsHtml += createAlert('critical', 'fa-bolt', 'Quá tải nghiêm trọng',
-            `Tổng công suất ${totalPower}W vượt ngưỡng nguy hiểm ${criticalThreshold}W`, 'Ngay bây giờ');
+            `Tổng công suất ${totalPower}W vượt ngưỡng nguy hiểm ${criticalThreshold}W`, currentTime);
         notifications.push({
             type: 'critical',
             icon: 'fa-bolt',
             title: 'Quá tải nghiêm trọng',
             desc: `Tổng: ${totalPower}W > ${criticalThreshold}W`,
-            time: 'Ngay bây giờ'
+            time: currentTime
         });
     } else if (totalPower >= warningThreshold) {
         alertsHtml += createAlert('warning', 'fa-exclamation-circle', 'Công suất cao',
-            `Tổng công suất ${totalPower}W vượt ngưỡng cảnh báo ${warningThreshold}W`, 'Vừa xong');
+            `Tổng công suất ${totalPower}W vượt ngưỡng cảnh báo ${warningThreshold}W`, currentTime);
         notifications.push({
             type: 'warning',
             icon: 'fa-exclamation-circle',
             title: 'Công suất cao',
             desc: `Tổng: ${totalPower}W > ${warningThreshold}W`,
-            time: 'Vừa xong'
+            time: currentTime
         });
     }
 
@@ -212,13 +247,13 @@ function updateAlerts(data) {
         Object.values(data.rooms).forEach(room => {
             if (room.power >= warningThreshold) {
                 alertsHtml += createAlert('warning', 'fa-exclamation-circle', 'Phòng công suất cao',
-                    `${room.name}: ${room.power}W vượt ngưỡng cảnh báo`, '1 phút trước');
+                    `${room.name}: ${room.power}W vượt ngưỡng cảnh báo`, currentTime);
                 notifications.push({
                     type: 'warning',
                     icon: 'fa-exclamation-circle',
                     title: 'Phòng công suất cao',
                     desc: `${room.name}: ${room.power}W vượt ngưỡng`,
-                    time: '1 phút trước'
+                    time: currentTime
                 });
             }
         });
@@ -234,12 +269,12 @@ function updateAlerts(data) {
 
     if (inactiveRooms.length > 0) {
         alertsHtml += createAlert('info', 'fa-info-circle', 'Phòng không hoạt động',
-            `${inactiveRooms.join(', ')} không có thiết bị đang bật`, '5 phút trước');
+            `${inactiveRooms.join(', ')} không có thiết bị đang bật`, currentTime);
     }
 
     if (alertsHtml === '') {
         alertsHtml = createAlert('info', 'fa-check-circle', 'Hệ thống bình thường',
-            'Tất cả các chỉ số đều trong ngưỡng cho phép', 'Vừa xong');
+            'Tất cả các chỉ số đều trong ngưỡng cho phép', currentTime);
     }
 
     alertList.innerHTML = alertsHtml;
@@ -443,9 +478,20 @@ function initCharts() {
 }
 
 function updateCharts(data) {
-    if (powerChart && data.total) {
-        const newData = generateMockPowerData(data.total.power);
-        powerChart.data.datasets[0].data = newData;
+    if (powerChart && data.calculatedTotalPower !== undefined) {
+        // Thêm dữ liệu mới vào lịch sử
+        powerHistory.push(data.calculatedTotalPower);
+        timeLabels.push(getCurrentTimeLabel());
+
+        // Giới hạn số điểm dữ liệu
+        if (powerHistory.length > MAX_HISTORY_POINTS) {
+            powerHistory.shift();
+            timeLabels.shift();
+        }
+
+        // Cập nhật biểu đồ với dữ liệu thực
+        powerChart.data.labels = timeLabels;
+        powerChart.data.datasets[0].data = powerHistory;
         powerChart.update('none');
     }
 
@@ -460,8 +506,8 @@ function initPowerChart() {
     const ctx = document.getElementById('powerChart');
     if (!ctx) return;
 
-    const hours = Array.from({ length: 24 }, (_, i) => `${i}:00`);
-    const mockData = generateMockPowerData(1724);
+    // Bắt đầu với mảng rỗng, sẽ được điền dữ liệu thực khi Firebase cập nhật
+    // timeLabels và powerHistory sẽ được cập nhật từ updateCharts()
 
     // Create gradient for fill
     const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
@@ -472,10 +518,10 @@ function initPowerChart() {
     powerChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: hours,
+            labels: timeLabels, // Sử dụng mảng timeLabels thực
             datasets: [{
                 label: 'Công suất (W)',
-                data: mockData,
+                data: powerHistory, // Sử dụng mảng powerHistory thực
                 borderColor: 'rgb(99, 137, 255)',
                 backgroundColor: gradient,
                 fill: true,
