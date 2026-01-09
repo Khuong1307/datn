@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Hệ thống điều khiển và giám sát điện năng thông minh - Smart Power Management System">
+    <title>Hệ Thống Giám Sát Điện Năng</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="bg-gradient"></div>
+        <div class="floating-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="logo.png" alt="HCMUTE Logo" class="logo-img">
+                <span class="logo-text">HCMUTE</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html#dashboard" class="nav-link active">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#rooms" class="nav-link">
+                    <i class="fas fa-door-open"></i>
+                    <span>Phòng</span>
+                </a>
+                <a href="settings.html" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Cài đặt</span>
+                </a>
+            </div>
+            <div class="nav-user">
+                <div class="notification-wrapper" id="notificationWrapper">
+                    <div class="notification-bell" id="notificationBell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationBadge">0</span>
+                    </div>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <h4><i class="fas fa-bell"></i> Thông báo</h4>
+                            <span class="notification-count" id="notificationCount">0 cảnh báo</span>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <!-- Notifications will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="info-btn" id="infoBtn" title="Thông tin đồ án">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section" id="dashboard">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        <span class="title-gradient">Giám Sát</span>
+                        <span class="title-white">Điện Năng Thông Minh</span>
+                    </h1>
+                    <p class="hero-subtitle">Theo dõi và quản lý tiêu thụ điện năng trong thời gian thực</p>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="totalPower">1,724</span>
+                            <span class="stat-label">Công suất (W)</span>
+                        </div>
+                        <div class="stat-trend up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>12%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="monthlyEnergy">0</span>
+                            <span class="stat-label">kWh Tháng này</span>
+                        </div>
+                        <div class="stat-trend down">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>5%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="monthlyCost">1,210,284</span>
+                            <span class="stat-label">VNĐ Tháng này</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-info">
+                        <div class="stat-icon">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="activeRooms">2</span>
+                            <span class="stat-label">Phòng hoạt động</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Grid -->
+        <section class="dashboard-grid">
+            <!-- Power Chart -->
+            <div class="dashboard-card chart-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-area"></i>
+                        Biểu đồ tiêu thụ điện
+                    </h2>
+                    <div class="card-actions">
+                        <button class="btn-icon active" data-period="realtime">Realtime</button>
+                        <button class="btn-icon" data-period="day">Ngày</button>
+                        <button class="btn-icon" data-period="week">Tuần</button>
+                        <button class="btn-icon" data-period="month">Tháng</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="powerChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Power Distribution -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Phân bổ điện năng
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Alert Panel -->
+            <div class="dashboard-card alert-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Cảnh báo hệ thống
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert-list" id="alertList">
+                        <div class="alert-item warning">
+                            <div class="alert-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <span class="alert-title">Công suất cao</span>
+                                <span class="alert-desc">Phòng 1 vượt ngưỡng cảnh báo (862W > 502W)</span>
+                            </div>
+                            <span class="alert-time">2 phút trước</span>
+                        </div>
+                        <div class="alert-item critical">
+                            <div class="alert-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="alert-content">
+                                <span class="alert-title">Quá tải</span>
+                                <span class="alert-desc">Tổng công suất gần ngưỡng giới hạn (1724W)</span>
+                            </div>
+                            <span class="alert-time">5 phút trước</span>
+                        </div>
+                        <div class="alert-item info">
+                            <div class="alert-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <span class="alert-title">Thiết bị tắt</span>
+                                <span class="alert-desc">Phòng 3 và Phòng 4 không có thiết bị hoạt động</span>
+                            </div>
+                            <span class="alert-time">10 phút trước</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rooms Section -->
+        <section class="rooms-section" id="rooms">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-door-open"></i>
+                    Quản lý phòng
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-outline">
+                        <i class="fas fa-sync-alt"></i>
+                        Làm mới
+                    </button>
+                </div>
+            </div>
+            <div class="rooms-grid" id="roomsGrid">
+                <!-- Rooms will be generated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Energy Summary -->
+        <section class="energy-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Tổng quan tiêu thụ
+                </h2>
+            </div>
+            <div class="energy-grid">
+                <div class="energy-card">
+                    <div class="energy-icon today">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="energy-info">
+                        <span class="energy-label">Hôm nay</span>
+                        <div class="energy-values">
+                            <span class="energy-kwh" id="todayKwh">0 kWh</span>
+                            <span class="energy-cost" id="todayCost">0 VNĐ</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="energy-card">
+                    <div class="energy-icon month">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="energy-info">
+                        <span class="energy-label">Tháng này</span>
+                        <div class="energy-values">
+                            <span class="energy-kwh" id="monthKwh">0 kWh</span>
+                            <span class="energy-cost" id="monthCost">0 VNĐ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="logo.png" alt="HCMUTE Logo" class="footer-logo">
+                <span>HCMUTE - Hệ thống giám sát điện năng thông minh</span>
+            </div>
+            <div class="footer-info">
+                <span>© 2025 ĐATN - Điều khiển và giám sát điện năng</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- API Scripts -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <h3 class="modal-title">Xác nhận lưu thay đổi</h3>
+            <p class="modal-message">Bạn có chắc chắn muốn lưu các thay đổi giá điện bậc thang?</p>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="modalCancelBtn">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button class="btn btn-confirm" id="modalConfirmBtn">
+                    <i class="fas fa-check"></i>
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-content info-modal-content">
+            <button class="modal-close-btn" id="infoModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="info-modal-header">
+                <div class="info-modal-logo">
+                    <img src="logo.png" alt="HCMUTE Logo">
+                </div>
+                <h2>ĐỒ ÁN TỐT NGHIỆP</h2>
+            </div>
+            <div class="info-modal-body">
+                <div class="project-title">
+                    <i class="fas fa-bolt"></i>
+                    <h3>HỆ THỐNG ĐIỀU KHIỂN VÀ GIÁM SÁT ĐIỆN NĂNG</h3>
+                </div>
+                <div class="project-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Trường:</span>
+                        <span class="detail-value">Đại học Sư phạm Kỹ thuật TP.HCM</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Khoa:</span>
+                        <span class="detail-value">Điện - Điện tử</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Năm:</span>
+                        <span class="detail-value">2025</span>
+                    </div>
+                </div>
+                <div class="team-section">
+                    <h4><i class="fas fa-users"></i> Thành viên thực hiện</h4>
+                    <div class="team-members">
+                        <div class="member-card">
+                            <div class="member-avatar">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div class="member-info">
+                                <span class="member-name">Nguyễn Lê Phúc Khương</span>
+                                <span class="member-id">MSSV: 20161216</span>
+                            </div>
+                        </div>
+                        <div class="member-card">
+                            <div class="member-avatar">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div class="member-info">
+                                <span class="member-name">Nguyễn Chí Phúc</span>
+                                <span class="member-id">MSSV: 20161244</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="advisor-section">
+                    <h4><i class="fas fa-chalkboard-teacher"></i> Giảng viên hướng dẫn</h4>
+                    <div class="advisor-info">
+                        <div class="advisor-avatar">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <span class="advisor-name">GVC. ThS. Võ Đức Dũng</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
