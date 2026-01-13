@@ -2824,3 +2824,339 @@ input[type="time"].email-input {
         gap: var(--spacing-sm);
     }
 }
+
+/* ===== Custom Cost Calculation Section ===== */
+.custom-calc-section {
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.custom-calc-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    position: relative;
+    overflow: hidden;
+}
+
+.custom-calc-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--info), var(--success));
+}
+
+.custom-calc-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.custom-calc-header i {
+    font-size: 1.5rem;
+    color: var(--primary-light);
+}
+
+.custom-calc-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.calc-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.calc-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.calc-input-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.calc-input-group input[type="datetime-local"] {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all var(--transition-normal);
+}
+
+.calc-input-group input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.calc-input-group input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.calc-select {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    width: 100%;
+}
+
+.calc-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.calc-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.btn-calculate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-xl);
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-calculate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--primary-glow);
+}
+
+.btn-calculate:active {
+    transform: translateY(0);
+}
+
+.btn-calculate:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.calc-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--glass-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    margin-top: var(--spacing-lg);
+}
+
+.calc-results.hidden {
+    display: none;
+}
+
+.calc-result-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.calc-result-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.calc-result-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-light), var(--info-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.calc-result-value.cost {
+    background: linear-gradient(135deg, var(--success), var(--success-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.calc-note {
+    margin-top: var(--spacing-md);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .custom-calc-section {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .custom-calc-card {
+        padding: var(--spacing-lg);
+    }
+
+    .calc-form {
+        grid-template-columns: 1fr;
+    }
+
+    .calc-results {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Delete Room Section ===== */
+.delete-room-section {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--border-color);
+}
+
+.delete-room-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.delete-room-header i {
+    font-size: 1.1rem;
+}
+
+.delete-room-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.delete-room-form .calc-select {
+    flex: 1;
+    min-width: 200px;
+}
+
+.btn-delete-data,
+.btn-delete-all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.btn-delete-data {
+    background: var(--warning);
+    color: #000;
+}
+
+.btn-delete-data:hover {
+    background: var(--warning-light);
+    transform: translateY(-2px);
+}
+
+.btn-delete-all {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-delete-all:hover {
+    background: var(--danger-light);
+    transform: translateY(-2px);
+}
+
+.btn-delete-data:disabled,
+.btn-delete-all:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    .delete-room-form {
+        flex-direction: column;
+    }
+
+    .delete-room-form .calc-select {
+        width: 100%;
+    }
+
+    .btn-delete-data,
+    .btn-delete-all {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ===== Delete Modal Styling ===== */
+.delete-modal {
+    max-width: 450px;
+}
+
+.modal-icon.danger {
+    background: rgba(239, 83, 80, 0.15);
+    color: var(--danger);
+}
+
+.modal-warning {
+    font-size: 0.85rem;
+    color: var(--danger);
+    background: rgba(239, 83, 80, 0.1);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-sm);
+    border-left: 3px solid var(--danger);
+}
+
+.modal-warning:empty {
+    display: none;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.btn-danger:hover {
+    background: var(--danger-light);
+    transform: translateY(-2px);
+}
