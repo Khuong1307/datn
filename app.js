@@ -1491,7 +1491,7 @@ async function handleCalculateCustomCost() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tính...';
         btn.disabled = true;
 
-        const chartData = await window.api.getChartData('month');
+        const chartData = await window.api.getChartData('week');
 
         if (!chartData || !chartData.labels || chartData.labels.length === 0) {
             throw new Error('Không có dữ liệu lịch sử');
@@ -1550,6 +1550,14 @@ async function handleCalculateCustomCost() {
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
 
+        console.log('=== CALC DEBUG ===');
+        console.log('Start time input:', startStr, '→', new Date(startTime).toLocaleString());
+        console.log('End time input:', endStr, '→', new Date(endTime).toLocaleString());
+        console.log('Chart period:', chartData.period);
+        console.log('Chart labels count:', chartData.labels.length);
+        console.log('First label:', chartData.labels[0]);
+        console.log('Last label:', chartData.labels[chartData.labels.length - 1]);
+
         chartData.labels.forEach((label, index) => {
             let dt;
             if (chartData.period === 'day') {
@@ -1568,12 +1576,12 @@ async function handleCalculateCustomCost() {
                 // parse "13/01 10:00"
                 const parts = label.split(' ');
                 const dateParts = parts[0].split('/');
-                const timeParts = parts[1].split(':');
+                const timeParts = parts[1] ? parts[1].split(':') : [0, 0];
 
                 const d = parseInt(dateParts[0]);
                 const mo = parseInt(dateParts[1]) - 1; // 0-based
-                const h = parseInt(timeParts[0]);
-                const mi = parseInt(timeParts[1]);
+                const h = parseInt(timeParts[0]) || 0;
+                const mi = parseInt(timeParts[1]) || 0;
 
                 dt = new Date(currentYear, mo, d, h, mi);
 
@@ -1585,6 +1593,9 @@ async function handleCalculateCustomCost() {
             times.push(dt.getTime());
             powers.push(powerValues[index]);
         });
+
+        console.log('Parsed times range:', new Date(Math.min(...times)).toLocaleString(), '→', new Date(Math.max(...times)).toLocaleString());
+        console.log('Requested range:', new Date(startTime).toLocaleString(), '→', new Date(endTime).toLocaleString());
 
         // NOW we have reconstructed timestamps. 
 
