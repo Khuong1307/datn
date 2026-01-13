@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initNotifications();
     initEmailSettings();
     initRoomThresholds();
+    initCustomCalculation();
 
     // Tải dữ liệu lần đầu
     loadData();
@@ -1263,4 +1264,365 @@ async function saveRoomThresholds() {
     }
 
     setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 3000);
+}
+
+// ===== Custom Cost Calculation =====
+async function initCustomCalculation() {
+    const btnCalc = document.getElementById('btnCalculate');
+    const inputStart = document.getElementById('calcStartTime');
+    const inputEnd = document.getElementById('calcEndTime');
+    const roomSelect = document.getElementById('calcRoom');
+
+    if (!btnCalc || !inputStart || !inputEnd) return;
+
+    // Set default values (Last 24 hours)
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const formatDateTime = (date) => {
+        const pad = (n) => n.toString().padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+
+    inputStart.value = formatDateTime(yesterday);
+    inputEnd.value = formatDateTime(now);
+
+    // Populate room dropdown from API
+    if (roomSelect) {
+        try {
+            const data = await window.api.getData();
+            if (data && data.rooms) {
+                Object.entries(data.rooms).forEach(([roomId, room]) => {
+                    const option = document.createElement('option');
+                    option.value = room.name;
+                    option.textContent = room.name;
+                    roomSelect.appendChild(option);
+                });
+            }
+        } catch (e) {
+            console.log('Could not populate room list:', e);
+        }
+    }
+
+    btnCalc.addEventListener('click', handleCalculateCustomCost);
+
+    // Delete room functionality
+    initDeleteRoom();
+}
+
+async function initDeleteRoom() {
+    const deleteSelect = document.getElementById('deleteRoomSelect');
+    const btnDeleteData = document.getElementById('btnDeleteRoomData');
+    const btnDeleteAll = document.getElementById('btnDeleteRoomAll');
+
+    if (!deleteSelect || !btnDeleteData || !btnDeleteAll) return;
+
+    // Populate delete room dropdown
+    try {
+        const data = await window.api.getData();
+        if (data && data.rooms) {
+            Object.entries(data.rooms).forEach(([roomId, room]) => {
+                const option = document.createElement('option');
+                // Extract numeric slave_id from roomId (e.g., "room5" -> "5")
+                const slaveId = roomId.replace(/\D/g, '');
+                option.value = slaveId;
+                option.textContent = room.name;
+                deleteSelect.appendChild(option);
+            });
+        }
+    } catch (e) {
+        console.log('Could not populate delete room list:', e);
+    }
+
+    btnDeleteData.addEventListener('click', () => handleDeleteRoom('data'));
+    btnDeleteAll.addEventListener('click', () => handleDeleteRoom('all'));
+}
+
+async function handleDeleteRoom(type) {
+    const deleteSelect = document.getElementById('deleteRoomSelect');
+    const slaveId = deleteSelect?.value;
+
+    if (!slaveId) {
+        alert('Vui lòng chọn phòng cần xóa!');
+        return;
+    }
+
+    const roomName = deleteSelect.options[deleteSelect.selectedIndex].text;
+
+    // Show custom modal
+    const modal = document.getElementById('deleteModal');
+    const modalTitle = document.getElementById('deleteModalTitle');
+    const modalMessage = document.getElementById('deleteModalMessage');
+    const modalWarning = document.getElementById('deleteModalWarning');
+    const btnCancel = document.getElementById('deleteModalCancel');
+    const btnConfirm = document.getElementById('deleteModalConfirm');
+
+    if (type === 'all') {
+        modalTitle.textContent = `Xóa hoàn toàn ${roomName}`;
+        modalMessage.textContent = `Bạn có chắc chắn muốn xóa hoàn toàn tất cả dữ liệu của ${roomName}?`;
+        modalWarning.textContent = '⚠️ Hành động này không thể hoàn tác! Tất cả dữ liệu lịch sử và lệnh điều khiển sẽ bị xóa vĩnh viễn.';
+    } else {
+        modalTitle.textContent = `Xóa lịch sử ${roomName}`;
+        modalMessage.textContent = `Bạn có chắc chắn muốn xóa dữ liệu lịch sử công suất của ${roomName}?`;
+        modalWarning.textContent = '';
+    }
+
+    modal.classList.add('active');
+
+    // Handle modal buttons
+    const handleConfirm = async () => {
+        modal.classList.remove('active');
+        await executeDelete(slaveId, type);
+        cleanup();
+    };
+
+    const handleCancel = () => {
+        modal.classList.remove('active');
+        cleanup();
+    };
+
+    const cleanup = () => {
+        btnConfirm.removeEventListener('click', handleConfirm);
+        btnCancel.removeEventListener('click', handleCancel);
+    };
+
+    btnConfirm.addEventListener('click', handleConfirm);
+    btnCancel.addEventListener('click', handleCancel);
+}
+
+async function executeDelete(slaveId, type) {
+    const btnDeleteData = document.getElementById('btnDeleteRoomData');
+    const btnDeleteAll = document.getElementById('btnDeleteRoomAll');
+
+    try {
+        btnDeleteData.disabled = true;
+        btnDeleteAll.disabled = true;
+
+        const response = await fetch(`${API_BASE_URL}/room/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slave_id: slaveId, type: type })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(`✅ ${result.message}`);
+            location.reload();
+        } else {
+            alert(`❌ Lỗi: ${result.message}`);
+        }
+    } catch (err) {
+        console.error('Delete error:', err);
+        alert('❌ Lỗi kết nối server!');
+    } finally {
+        btnDeleteData.disabled = false;
+        btnDeleteAll.disabled = false;
+    }
+}
+
+async function handleCalculateCustomCost() {
+    const btn = document.getElementById('btnCalculate');
+    const startStr = document.getElementById('calcStartTime').value;
+    const endStr = document.getElementById('calcEndTime').value;
+    const roomSelect = document.getElementById('calcRoom');
+    const selectedRoom = roomSelect?.value || 'all';
+    const resultsDiv = document.getElementById('calcResults');
+    const resultKwh = document.getElementById('resultKwh');
+    const resultCost = document.getElementById('resultCost');
+
+    if (!startStr || !endStr) {
+        alert('Vui lòng chọn thời gian bắt đầu và kết thúc!');
+        return;
+    }
+
+    const startTime = new Date(startStr).getTime();
+    const endTime = new Date(endStr).getTime();
+
+    if (startTime >= endTime) {
+        alert('Thời gian kết thúc phải sau thời gian bắt đầu!');
+        return;
+    }
+
+    try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tính...';
+        btn.disabled = true;
+
+        const chartData = await window.api.getChartData('month');
+
+        if (!chartData || !chartData.labels || chartData.labels.length === 0) {
+            throw new Error('Không có dữ liệu lịch sử');
+        }
+
+        // 2. Filter data within range
+        // chartData.labels are date strings, we need to parse them.
+        // Assuming API returns labels that can be parsed or we check webserver logic.
+        // webserver.py sends specific formats. We might need to handle parsing carefully.
+        // Let's use the raw logic from webserver which sends sorted data.
+
+        // Wait, webserver returns `labels` (formatted strings) and `total_power` (values).
+        // It does NOT return raw timestamps in the response for 'labels'.
+        // BUT, `getChartData` in `webserver.py` implementation:
+        // labels = [item[0] for item in sorted_data] -> keys like "13/01 10:00"
+
+        // ISSUE: The labels from `getChartData` (e.g., "13/01 10:00") are hard to parse back to absolute timestamps accurately without year.
+        // SOLUTION: We need modification to `webserver.py` to return raw timestamps OR we trust `labels` if they have year. 
+        // `webserver.py` format: 
+        // month: "%d/%m %H:00" -> No year!
+        // week: "%d/%m %H:%M" -> No year!
+        // day: "%H:%M:%S" -> No date!
+
+        // CRITICAL ISSUE: Client-side calculation is IMPOSSIBLE with current `getChartData` response because it loses absolute time info.
+        // WE MUST MODIFY `webserver.py` to return timestamps or modify `getChartData` to return a list of objects {ts, power}.
+
+        // Updating plan: I will modify `webserver.py` to include a `timestamps` array in the response of `/api/chart/power`.
+        // This is a minimal backend change required for the feature to work robustly.
+
+        // Re-reading User Request: "ko cần sửa trên sever dùng JS thôi" (No server edits, JS only).
+        // This is a hard constraint.
+        // So I must work with what I have.
+
+        // Strategy: 
+        // 1. If period is 'day', labels are 'HH:MM:SS'. We assume it's today/yesterday.
+        // 2. If period is 'month'/'week', labels are 'DD/MM HH:mm'. We assume current year.
+        // This is risky around New Year but acceptable for this scope.
+
+        // Let's implement fuzzy parsing.
+
+        // Select power data based on room
+        let powerValues;
+        if (selectedRoom === 'all') {
+            powerValues = chartData.total_power;
+        } else if (chartData.rooms && chartData.rooms[selectedRoom]) {
+            powerValues = chartData.rooms[selectedRoom];
+        } else {
+            console.warn(`Room "${selectedRoom}" not found, using total`);
+            powerValues = chartData.total_power;
+        }
+
+        const times = [];
+        const powers = [];
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+
+        chartData.labels.forEach((label, index) => {
+            let dt;
+            if (chartData.period === 'day') {
+                // Label: HH:MM:SS
+                const [h, m, s] = label.split(':').map(Number);
+                dt = new Date();
+                dt.setHours(h, m, s, 0);
+                // If time is in future relative to now (and we are fetching history), it might be yesterday?
+                // Actually `day` query is `ts >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`. 
+                // So 23:00 when now is 10:00 means 23:00 yesterday.
+                if (dt > now) {
+                    dt.setDate(dt.getDate() - 1);
+                }
+            } else {
+                // Label: DD/MM HH:mm or similar
+                // parse "13/01 10:00"
+                const parts = label.split(' ');
+                const dateParts = parts[0].split('/');
+                const timeParts = parts[1].split(':');
+
+                const d = parseInt(dateParts[0]);
+                const mo = parseInt(dateParts[1]) - 1; // 0-based
+                const h = parseInt(timeParts[0]);
+                const mi = parseInt(timeParts[1]);
+
+                dt = new Date(currentYear, mo, d, h, mi);
+
+                // Handle year rollover (if month is Dec and current is Jan)
+                if (mo === 11 && currentMonth === 0 && dt > now) {
+                    dt.setFullYear(currentYear - 1);
+                }
+            }
+            times.push(dt.getTime());
+            powers.push(powerValues[index]);
+        });
+
+        // NOW we have reconstructed timestamps. 
+
+        // 3. Trapezoidal Integration
+        let totalEnergyKwh = 0;
+        let count = 0;
+
+        for (let i = 0; i < times.length - 1; i++) {
+            const t1 = times[i];
+            const t2 = times[i + 1];
+            const p1 = powers[i];
+            const p2 = powers[i + 1];
+
+            // Check if this segment overlaps with requested range
+            // Simple approach: Use points strictly inside, or interpolate. 
+            // For simplicity, if t1 and t2 are within range.
+
+            // Use overlap logic instead of strict containment
+            const startOverlap = Math.max(t1, startTime);
+            const endOverlap = Math.min(t2, endTime);
+
+            if (startOverlap < endOverlap) {
+                const dtHours = (endOverlap - startOverlap) / (1000 * 3600);
+                const avgPowerKw = ((p1 + p2) / 2) / 1000;
+                totalEnergyKwh += avgPowerKw * dtHours;
+                count++;
+            }
+        }
+
+        console.log(`Integrated ${count} segments. Total: ${totalEnergyKwh.toFixed(4)} kWh`);
+
+        // Calculate cost using tier pricing
+        const tierLimits = {
+            tier1: parseInt(document.getElementById('tierLimit1')?.value) || 50,
+            tier2: parseInt(document.getElementById('tierLimit2')?.value) || 100,
+            tier3: parseInt(document.getElementById('tierLimit3')?.value) || 200,
+            tier4: parseInt(document.getElementById('tierLimit4')?.value) || 300,
+            tier5: parseInt(document.getElementById('tierLimit5')?.value) || 400
+        };
+
+        const tierPrices = [
+            parseInt(document.getElementById('tierPrice1')?.value) || 1984,
+            parseInt(document.getElementById('tierPrice2')?.value) || 2050,
+            parseInt(document.getElementById('tierPrice3')?.value) || 2380,
+            parseInt(document.getElementById('tierPrice4')?.value) || 2998,
+            parseInt(document.getElementById('tierPrice5')?.value) || 3350,
+            parseInt(document.getElementById('tierPrice6')?.value) || 3460
+        ];
+
+        const vat = parseInt(document.getElementById('vatInput')?.value) || 8;
+
+        // Tiered cost calculation
+        let cost = 0;
+        let remaining = totalEnergyKwh;
+        const tiers = [
+            { limit: tierLimits.tier1, price: tierPrices[0] },
+            { limit: tierLimits.tier2 - tierLimits.tier1, price: tierPrices[1] },
+            { limit: tierLimits.tier3 - tierLimits.tier2, price: tierPrices[2] },
+            { limit: tierLimits.tier4 - tierLimits.tier3, price: tierPrices[3] },
+            { limit: tierLimits.tier5 - tierLimits.tier4, price: tierPrices[4] },
+            { limit: Infinity, price: tierPrices[5] }
+        ];
+
+        for (const tier of tiers) {
+            if (remaining <= 0) break;
+            const usage = Math.min(remaining, tier.limit);
+            cost += usage * tier.price;
+            remaining -= usage;
+        }
+        cost = cost * (1 + vat / 100);
+
+        // Display results
+        resultKwh.textContent = totalEnergyKwh.toFixed(3) + ' kWh';
+        resultCost.textContent = formatCurrency(Math.round(cost)) + ' VNĐ';
+        resultsDiv.classList.remove('hidden');
+
+    } catch (err) {
+        console.error(err);
+        alert('Lỗi tính toán: ' + err.message);
+    } finally {
+        btn.innerHTML = '<i class="fas fa-calculator"></i> Tính toán';
+        btn.disabled = false;
+    }
 }
