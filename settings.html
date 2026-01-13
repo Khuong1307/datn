@@ -4,13 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Cài đặt hệ thống - Smart Power Management System">
-    <title>Cài đặt - Hệ Thống Giám Sát Điện Năng</title>
+    <meta name="description"
+        content="Hệ thống điều khiển và giám sát điện năng thông minh - Smart Power Management System">
+    <title>Hệ Thống Giám Sát Điện Năng</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -36,20 +38,35 @@
                 <i class="fas fa-bars"></i>
             </button>
             <div class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">
+                <a href="index.html#dashboard" class="nav-link active">
                     <i class="fas fa-chart-line"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="index.html#rooms" class="nav-link">
+                <a href="#rooms" class="nav-link">
                     <i class="fas fa-door-open"></i>
                     <span>Phòng</span>
                 </a>
-                <a href="settings.html" class="nav-link active">
+                <a href="settings.html" class="nav-link">
                     <i class="fas fa-cog"></i>
                     <span>Cài đặt</span>
                 </a>
             </div>
             <div class="nav-user">
+                <div class="notification-wrapper" id="notificationWrapper">
+                    <div class="notification-bell" id="notificationBell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationBadge">0</span>
+                    </div>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <h4><i class="fas fa-bell"></i> Thông báo</h4>
+                            <span class="notification-count" id="notificationCount">0 cảnh báo</span>
+                        </div>
+                        <div class="notification-list" id="notificationList">
+                            <!-- Notifications will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
                 <div class="info-btn" id="infoBtn" title="Thông tin đồ án">
                     <i class="fas fa-info-circle"></i>
                 </div>
@@ -59,315 +76,254 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Settings Section -->
-        <section class="settings-section" id="settings">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <i class="fas fa-cog"></i>
-                    Cài đặt hệ thống
-                </h2>
-            </div>
-            <div class="settings-grid">
-                <!-- Thresholds Card -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <div class="settings-icon warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <h3>Ngưỡng cảnh báo</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div class="threshold-edit-form">
-                            <div class="threshold-edit-row">
-                                <div class="threshold-edit-label">
-                                    <i class="fas fa-exclamation-circle warning-icon"></i>
-                                    <span>Ngưỡng cảnh báo</span>
-                                </div>
-                                <div class="threshold-edit-input">
-                                    <input type="number" id="warningThresholdInput" class="threshold-input" value="502">
-                                    <span class="threshold-unit">W</span>
-                                </div>
-                            </div>
-                            <div class="threshold-edit-row">
-                                <div class="threshold-edit-label">
-                                    <i class="fas fa-bolt critical-icon"></i>
-                                    <span>Ngưỡng nguy hiểm</span>
-                                </div>
-                                <div class="threshold-edit-input">
-                                    <input type="number" id="criticalThresholdInput" class="threshold-input"
-                                        value="1000">
-                                    <span class="threshold-unit">W</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn btn-save btn-save-sm" id="saveThresholdBtn">
-                            <i class="fas fa-save"></i>
-                            Lưu ngưỡng
-                        </button>
-                        <div class="save-status" id="thresholdSaveStatus"></div>
-                    </div>
+        <!-- Hero Section -->
+        <section class="hero-section" id="dashboard">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        <span class="title-gradient">Giám Sát</span>
+                        <span class="title-white">Điện Năng Thông Minh</span>
+                    </h1>
+                    <p class="hero-subtitle">Theo dõi và quản lý tiêu thụ điện năng trong thời gian thực</p>
                 </div>
-
-                <!-- Room Thresholds Card -->
-                <div class="settings-card room-threshold-card">
-                    <div class="settings-card-header">
-                        <div class="settings-icon danger">
+                <div class="hero-stats">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="totalPower">1,724</span>
+                            <span class="stat-label">Công suất (W)</span>
+                        </div>
+                        <div class="stat-trend up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>12%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="monthlyEnergy">0</span>
+                            <span class="stat-label">kWh Tháng này</span>
+                        </div>
+                        <div class="stat-trend down">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>5%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="monthlyCost">1,210,284</span>
+                            <span class="stat-label">VNĐ Tháng này</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-info">
+                        <div class="stat-icon">
                             <i class="fas fa-door-open"></i>
                         </div>
-                        <h3>Ngưỡng cảnh báo từng phòng</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div class="room-threshold-form" id="roomThresholdForm">
-                            <!-- Rooms will be loaded dynamically from API -->
-                            <div class="room-threshold-loading">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <span>Đang tải danh sách phòng...</span>
-                            </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="activeRooms">2</span>
+                            <span class="stat-label">Phòng hoạt động</span>
                         </div>
-
-                        <button class="btn btn-save btn-save-sm" id="saveRoomThresholdBtn">
-                            <i class="fas fa-save"></i>
-                            Lưu ngưỡng phòng
-                        </button>
-                        <div class="save-status" id="roomThresholdSaveStatus"></div>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <!-- Tier Prices Card -->
-
-                <div class="settings-card tier-card">
-                    <div class="settings-card-header">
-                        <div class="settings-icon success">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
-                        <h3>Giá điện bậc thang</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div class="tier-edit-form" id="tierEditForm">
-                            <!-- Tier 1 -->
-                            <div class="tier-edit-row">
-                                <div class="tier-edit-label">
-                                    <span class="tier-name">Bậc 1</span>
-                                    <span class="tier-range">0 - <input type="number" id="tierLimit1"
-                                            class="tier-limit-input" value="50"> kWh</span>
-                                </div>
-                                <div class="tier-edit-price">
-                                    <input type="number" id="tierPrice1" class="tier-price-input" value="1984">
-                                    <span class="tier-unit">đ/kWh</span>
-                                </div>
-                            </div>
-                            <!-- Tier 2 -->
-                            <div class="tier-edit-row">
-                                <div class="tier-edit-label">
-                                    <span class="tier-name">Bậc 2</span>
-                                    <span class="tier-range"><span id="tierLimit1Display">51</span> - <input
-                                            type="number" id="tierLimit2" class="tier-limit-input" value="100">
-                                        kWh</span>
-                                </div>
-                                <div class="tier-edit-price">
-                                    <input type="number" id="tierPrice2" class="tier-price-input" value="2050">
-                                    <span class="tier-unit">đ/kWh</span>
-                                </div>
-                            </div>
-                            <!-- Tier 3 -->
-                            <div class="tier-edit-row">
-                                <div class="tier-edit-label">
-                                    <span class="tier-name">Bậc 3</span>
-                                    <span class="tier-range"><span id="tierLimit2Display">101</span> - <input
-                                            type="number" id="tierLimit3" class="tier-limit-input" value="200">
-                                        kWh</span>
-                                </div>
-                                <div class="tier-edit-price">
-                                    <input type="number" id="tierPrice3" class="tier-price-input" value="2380">
-                                    <span class="tier-unit">đ/kWh</span>
-                                </div>
-                            </div>
-                            <!-- Tier 4 -->
-                            <div class="tier-edit-row">
-                                <div class="tier-edit-label">
-                                    <span class="tier-name">Bậc 4</span>
-                                    <span class="tier-range"><span id="tierLimit3Display">201</span> - <input
-                                            type="number" id="tierLimit4" class="tier-limit-input" value="300">
-                                        kWh</span>
-                                </div>
-                                <div class="tier-edit-price">
-                                    <input type="number" id="tierPrice4" class="tier-price-input" value="2998">
-                                    <span class="tier-unit">đ/kWh</span>
-                                </div>
-                            </div>
-                            <!-- Tier 5 -->
-                            <div class="tier-edit-row">
-                                <div class="tier-edit-label">
-                                    <span class="tier-name">Bậc 5</span>
-                                    <span class="tier-range"><span id="tierLimit4Display">301</span> - <input
-                                            type="number" id="tierLimit5" class="tier-limit-input" value="400">
-                                        kWh</span>
-                                </div>
-                                <div class="tier-edit-price">
-                                    <input type="number" id="tierPrice5" class="tier-price-input" value="3350">
-                                    <span class="tier-unit">đ/kWh</span>
-                                </div>
-                            </div>
-                            <!-- Tier 6 -->
-                            <div class="tier-edit-row">
-                                <div class="tier-edit-label">
-                                    <span class="tier-name">Bậc 6</span>
-                                    <span class="tier-range">> <span id="tierLimit5Display">400</span> kWh</span>
-                                </div>
-                                <div class="tier-edit-price">
-                                    <input type="number" id="tierPrice6" class="tier-price-input" value="3460">
-                                    <span class="tier-unit">đ/kWh</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn btn-save" id="saveTierBtn">
-                            <i class="fas fa-save"></i>
-                            Lưu thay đổi
-                        </button>
-                        <div class="save-status" id="saveStatus"></div>
+        <!-- Dashboard Grid -->
+        <section class="dashboard-grid">
+            <!-- Power Chart -->
+            <div class="dashboard-card chart-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-area"></i>
+                        Biểu đồ tiêu thụ điện
+                    </h2>
+                    <div class="card-actions">
+                        <button class="btn-icon active" data-period="realtime">Realtime</button>
+                        <button class="btn-icon" data-period="day">Ngày</button>
+                        <button class="btn-icon" data-period="week">Tuần</button>
+                        <button class="btn-icon" data-period="month">Tháng</button>
                     </div>
                 </div>
+                <div class="card-body">
+                    <canvas id="powerChart"></canvas>
+                </div>
+            </div>
 
-                <!-- VAT Card -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <div class="settings-icon info">
-                            <i class="fas fa-percent"></i>
-                        </div>
-                        <h3>Thuế VAT</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div class="vat-edit-form">
-                            <div class="vat-input-wrapper">
-                                <input type="number" id="vatInput" class="vat-input" value="8" min="0" max="100">
-                                <span class="vat-input-symbol">%</span>
+            <!-- Power Distribution -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Phân bổ điện năng
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Alert Panel -->
+            <div class="dashboard-card alert-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Cảnh báo hệ thống
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert-list" id="alertList">
+                        <div class="alert-item warning">
+                            <div class="alert-icon">
+                                <i class="fas fa-exclamation-circle"></i>
                             </div>
-                            <p class="vat-note">Thuế giá trị gia tăng áp dụng cho hóa đơn điện</p>
+                            <div class="alert-content">
+                                <span class="alert-title">Công suất cao</span>
+                                <span class="alert-desc">Phòng 1 vượt ngưỡng cảnh báo (862W > 502W)</span>
+                            </div>
+                            <span class="alert-time">2 phút trước</span>
                         </div>
-                        <button class="btn btn-save btn-save-sm" id="saveVatBtn">
-                            <i class="fas fa-save"></i>
-                            Lưu thuế VAT
-                        </button>
-                        <div class="save-status" id="vatSaveStatus"></div>
+                        <div class="alert-item critical">
+                            <div class="alert-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="alert-content">
+                                <span class="alert-title">Quá tải</span>
+                                <span class="alert-desc">Tổng công suất gần ngưỡng giới hạn (1724W)</span>
+                            </div>
+                            <span class="alert-time">5 phút trước</span>
+                        </div>
+                        <div class="alert-item info">
+                            <div class="alert-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <span class="alert-title">Thiết bị tắt</span>
+                                <span class="alert-desc">Phòng 3 và Phòng 4 không có thiết bị hoạt động</span>
+                            </div>
+                            <span class="alert-time">10 phút trước</span>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <!-- Email Alerts Card -->
-                <div class="settings-card email-card email-card-wide">
-                    <div class="settings-card-header">
-                        <div class="settings-icon primary">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <h3>Cảnh báo Email</h3>
+        <!-- Rooms Section -->
+        <section class="rooms-section" id="rooms">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-door-open"></i>
+                    Quản lý phòng
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-outline">
+                        <i class="fas fa-sync-alt"></i>
+                        Làm mới
+                    </button>
+                </div>
+            </div>
+            <div class="rooms-grid" id="roomsGrid">
+                <!-- Rooms will be generated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Energy Summary -->
+        <section class="energy-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Tổng quan tiêu thụ
+                </h2>
+            </div>
+            <div class="energy-grid">
+                <div class="energy-card">
+                    <div class="energy-icon today">
+                        <i class="fas fa-sun"></i>
                     </div>
-                    <div class="settings-card-body">
-                        <div class="email-edit-form">
-                            <div class="email-toggle-row">
-                                <div class="email-toggle-label">
-                                    <i class="fas fa-bell"></i>
-                                    <span>Bật thông báo email</span>
-                                </div>
-                                <div class="email-toggle-switch">
-                                    <input type="checkbox" id="emailEnabled" class="toggle-checkbox">
-                                    <label for="emailEnabled" class="toggle-label"></label>
-                                </div>
-                            </div>
-                            <div class="email-config-section" id="emailConfigSection">
-                                <div class="email-edit-row">
-                                    <div class="email-edit-label">
-                                        <i class="fas fa-user"></i>
-                                        <span>Email nhận cảnh báo</span>
-                                    </div>
-                                    <div class="email-edit-input">
-                                        <input type="email" id="emailRecipient" class="email-input"
-                                            placeholder="your@email.com">
-                                    </div>
-                                </div>
-                                <div class="email-edit-row">
-                                    <div class="email-edit-label">
-                                        <i class="fas fa-at"></i>
-                                        <span>Email gửi (sender)</span>
-                                    </div>
-                                    <div class="email-edit-input">
-                                        <input type="email" id="senderEmail" class="email-input"
-                                            placeholder="sender@gmail.com">
-                                    </div>
-                                </div>
-                                <div class="email-edit-row">
-                                    <div class="email-edit-label">
-                                        <i class="fas fa-key"></i>
-                                        <span>App Password</span>
-                                    </div>
-                                    <div class="email-edit-input">
-                                        <input type="password" id="senderPassword" class="email-input"
-                                            placeholder="••••••••••••">
-                                    </div>
-                                </div>
-                                <div class="email-edit-row">
-                                    <div class="email-edit-label">
-                                        <i class="fas fa-server"></i>
-                                        <span>SMTP Server</span>
-                                    </div>
-                                    <div class="email-edit-input">
-                                        <input type="text" id="smtpServer" class="email-input" value="smtp.gmail.com">
-                                    </div>
-                                </div>
-                                <div class="email-edit-row">
-                                    <div class="email-edit-label">
-                                        <i class="fas fa-plug"></i>
-                                        <span>SMTP Port</span>
-                                    </div>
-                                    <div class="email-edit-input">
-                                        <input type="number" id="smtpPort" class="email-input" value="587">
-                                    </div>
-                                </div>
-
-                                <!-- Divider -->
-                                <div class="email-divider"></div>
-
-                                <!-- Alert Cooldown -->
-                                <div class="email-edit-row">
-                                    <div class="email-edit-label">
-                                        <i class="fas fa-clock"></i>
-                                        <span>Thời gian giữa cảnh báo</span>
-                                    </div>
-                                    <div class="email-edit-input">
-                                        <input type="number" id="alertCooldown" class="email-input email-input-sm"
-                                            value="5" min="1" max="60">
-                                        <span class="email-unit">phút</span>
-                                    </div>
-                                </div>
-
-                                <!-- Daily Report -->
-                                <div class="email-edit-row">
-                                    <div class="email-edit-label">
-                                        <i class="fas fa-calendar-day"></i>
-                                        <span>Gửi báo cáo hằng ngày lúc</span>
-                                    </div>
-                                    <div class="email-edit-input">
-                                        <input type="time" id="dailyReportTime" class="email-input email-input-sm"
-                                            value="08:00">
-                                    </div>
-                                </div>
-
-                                <p class="email-note">
-                                    <i class="fas fa-info-circle"></i>
-                                    Với Gmail, sử dụng <a href="https://myaccount.google.com/apppasswords"
-                                        target="_blank">App Password</a> thay vì mật khẩu thường.
-                                </p>
-                            </div>
+                    <div class="energy-info">
+                        <span class="energy-label">Hôm nay</span>
+                        <div class="energy-values">
+                            <span class="energy-kwh" id="todayKwh">0 kWh</span>
+                            <span class="energy-cost" id="todayCost">0 VNĐ</span>
                         </div>
-                        <div class="email-btn-group">
-                            <button class="btn btn-save btn-save-sm" id="saveEmailBtn">
-                                <i class="fas fa-save"></i>
-                                Lưu cấu hình
-                            </button>
-                            <button class="btn btn-test btn-save-sm" id="testEmailBtn">
-                                <i class="fas fa-paper-plane"></i>
-                                Gửi test
-                            </button>
+                    </div>
+                </div>
+                <div class="energy-card">
+                    <div class="energy-icon month">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="energy-info">
+                        <span class="energy-label">Tháng này</span>
+                        <div class="energy-values">
+                            <span class="energy-kwh" id="monthKwh">0 kWh</span>
+                            <span class="energy-cost" id="monthCost">0 VNĐ</span>
                         </div>
-                        <div class="save-status" id="emailSaveStatus"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Custom Cost Calculation -->
+        <section class="custom-calc-section">
+            <div class="custom-calc-card">
+                <div class="custom-calc-header">
+                    <i class="fas fa-calculator"></i>
+                    <h3>Tính toán chi phí tùy chỉnh</h3>
+                </div>
+                <div class="calc-form">
+                    <div class="calc-input-group">
+                        <label for="calcRoom">Chọn phòng</label>
+                        <select id="calcRoom" class="calc-select">
+                            <option value="all">Tất cả phòng</option>
+                        </select>
+                    </div>
+                    <div class="calc-input-group">
+                        <label for="calcStartTime">Thời gian bắt đầu</label>
+                        <input type="datetime-local" id="calcStartTime">
+                    </div>
+                    <div class="calc-input-group">
+                        <label for="calcEndTime">Thời gian kết thúc</label>
+                        <input type="datetime-local" id="calcEndTime">
+                    </div>
+                </div>
+                <button class="btn-calculate" id="btnCalculate">
+                    <i class="fas fa-calculator"></i>
+                    Tính toán
+                </button>
+                <div class="calc-results hidden" id="calcResults">
+                    <div class="calc-result-item">
+                        <span class="calc-result-label">Tổng điện năng tiêu thụ</span>
+                        <span class="calc-result-value" id="resultKwh">0 kWh</span>
+                    </div>
+                    <div class="calc-result-item">
+                        <span class="calc-result-label">Chi phí ước tính</span>
+                        <span class="calc-result-value cost" id="resultCost">0 VNĐ</span>
+                    </div>
+                </div>
+                <p class="calc-note">*Kết quả được tính toán dựa trên dữ liệu công suất lịch sử và bảng giá hiện tại.
+                </p>
+
+                <!-- Delete Room Data Section -->
+                <div class="delete-room-section">
+                    <div class="delete-room-header">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Xóa dữ liệu phòng</span>
+                    </div>
+                    <div class="delete-room-form">
+                        <select id="deleteRoomSelect" class="calc-select">
+                            <option value="">-- Chọn phòng --</option>
+                        </select>
+                        <button class="btn-delete-data" id="btnDeleteRoomData">
+                            <i class="fas fa-eraser"></i> Xóa lịch sử
+                        </button>
+                        <button class="btn-delete-all" id="btnDeleteRoomAll">
+                            <i class="fas fa-trash"></i> Xóa hoàn toàn
+                        </button>
                     </div>
                 </div>
             </div>
@@ -425,6 +381,28 @@
                 <button class="btn btn-confirm" id="modalConfirmBtn">
                     <i class="fas fa-check"></i>
                     Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-content delete-modal">
+            <div class="modal-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="modal-title" id="deleteModalTitle">Xác nhận xóa</h3>
+            <p class="modal-message" id="deleteModalMessage">Bạn có chắc chắn muốn xóa dữ liệu này?</p>
+            <p class="modal-warning" id="deleteModalWarning"></p>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="deleteModalCancel">
+                    <i class="fas fa-times"></i>
+                    Hủy bỏ
+                </button>
+                <button class="btn btn-danger" id="deleteModalConfirm">
+                    <i class="fas fa-trash"></i>
+                    Xác nhận xóa
                 </button>
             </div>
         </div>
