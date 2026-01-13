@@ -37,13 +37,16 @@ function formatCurrency(value) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    initCharts();
+    // Init navigation first (works on all pages)
     initNavigation();
-    initInfoModal();
-    initNotifications();
-    initEmailSettings();
-    initRoomThresholds();
-    initCustomCalculation();
+
+    // These may not exist on all pages, so try-catch
+    try { initCharts(); } catch (e) { console.log('Charts not on this page'); }
+    try { initInfoModal(); } catch (e) { }
+    try { initNotifications(); } catch (e) { }
+    try { initEmailSettings(); } catch (e) { }
+    try { initRoomThresholds(); } catch (e) { }
+    try { initCustomCalculation(); } catch (e) { }
 
     // Tải dữ liệu lần đầu
     loadData();
@@ -296,6 +299,46 @@ function renderRooms(data) {
 
     // Re-attach device toggle listeners
     initDeviceControls();
+}
+
+// ===== Mobile Navigation Toggle =====
+function initNavigation() {
+    const navToggle = document.getElementById('navToggle');
+    const navMenu = document.getElementById('navMenu');
+
+    console.log('initNavigation called, toggle:', navToggle, 'menu:', navMenu);
+
+    if (!navToggle || !navMenu) {
+        console.log('Nav elements not found');
+        return;
+    }
+
+    navToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Toggle clicked!');
+        navMenu.classList.toggle('active');
+        // Change icon
+        const icon = navToggle.querySelector('i');
+        if (navMenu.classList.contains('active')) {
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
+        } else {
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        }
+    });
+
+    // Close menu when clicking a link
+    navMenu.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            navMenu.classList.remove('active');
+            navToggle.querySelector('i').classList.remove('fa-times');
+            navToggle.querySelector('i').classList.add('fa-bars');
+        });
+    });
+
+    console.log('Navigation initialized');
 }
 
 // Device control - toggle state via API
