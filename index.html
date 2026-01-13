@@ -265,6 +265,66 @@
                 </div>
             </div>
         </section>
+        <!-- Custom Cost Calculation -->
+        <section class="custom-calc-section">
+            <div class="custom-calc-card">
+                <div class="custom-calc-header">
+                    <i class="fas fa-calculator"></i>
+                    <h3>Tính toán chi phí tùy chỉnh</h3>
+                </div>
+                <div class="calc-form">
+                    <div class="calc-input-group">
+                        <label for="calcRoom">Chọn phòng</label>
+                        <select id="calcRoom" class="calc-select">
+                            <option value="all">Tất cả phòng</option>
+                        </select>
+                    </div>
+                    <div class="calc-input-group">
+                        <label for="calcStartTime">Thời gian bắt đầu</label>
+                        <input type="datetime-local" id="calcStartTime">
+                    </div>
+                    <div class="calc-input-group">
+                        <label for="calcEndTime">Thời gian kết thúc</label>
+                        <input type="datetime-local" id="calcEndTime">
+                    </div>
+                </div>
+                <button class="btn-calculate" id="btnCalculate">
+                    <i class="fas fa-calculator"></i>
+                    Tính toán
+                </button>
+                <div class="calc-results hidden" id="calcResults">
+                    <div class="calc-result-item">
+                        <span class="calc-result-label">Tổng điện năng tiêu thụ</span>
+                        <span class="calc-result-value" id="resultKwh">0 kWh</span>
+                    </div>
+                    <div class="calc-result-item">
+                        <span class="calc-result-label">Chi phí ước tính</span>
+                        <span class="calc-result-value cost" id="resultCost">0 VNĐ</span>
+                    </div>
+                </div>
+                <p class="calc-note">*Kết quả được tính toán dựa trên dữ liệu công suất lịch sử và bảng giá hiện tại.
+                </p>
+
+                <!-- Delete Room Data Section -->
+                <div class="delete-room-section">
+                    <div class="delete-room-header">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Xóa dữ liệu phòng</span>
+                    </div>
+                    <div class="delete-room-form">
+                        <select id="deleteRoomSelect" class="calc-select">
+                            <option value="">-- Chọn phòng --</option>
+                        </select>
+                        <button class="btn-delete-data" id="btnDeleteRoomData">
+                            <i class="fas fa-eraser"></i> Xóa lịch sử
+                        </button>
+                        <button class="btn-delete-all" id="btnDeleteRoomAll">
+                            <i class="fas fa-trash"></i> Xóa hoàn toàn
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
@@ -300,6 +360,28 @@
                 <button class="btn btn-confirm" id="modalConfirmBtn">
                     <i class="fas fa-check"></i>
                     Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-content delete-modal">
+            <div class="modal-icon danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="modal-title" id="deleteModalTitle">Xác nhận xóa</h3>
+            <p class="modal-message" id="deleteModalMessage">Bạn có chắc chắn muốn xóa dữ liệu này?</p>
+            <p class="modal-warning" id="deleteModalWarning"></p>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="deleteModalCancel">
+                    <i class="fas fa-times"></i>
+                    Hủy bỏ
+                </button>
+                <button class="btn btn-danger" id="deleteModalConfirm">
+                    <i class="fas fa-trash"></i>
+                    Xác nhận xóa
                 </button>
             </div>
         </div>
