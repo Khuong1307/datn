@@ -192,6 +192,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
 }
 
 .nav-brand {
@@ -240,6 +241,10 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+.nav-toggle {
+    display: none;
 }
 
 .nav-menu {
@@ -2722,8 +2727,48 @@ input[type="time"].email-input {
         padding: var(--spacing-sm) var(--spacing-md);
     }
 
+    .nav-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: var(--glass-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+    }
+
+    .nav-toggle:hover {
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+
     .nav-menu {
         display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        padding: var(--spacing-md);
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        z-index: 999;
+    }
+
+    .nav-menu.active {
+        display: flex;
+    }
+
+    .nav-menu .nav-link {
+        padding: var(--spacing-md);
+        border-radius: var(--radius-md);
+        background: var(--glass-bg);
     }
 
     .logo-text {
