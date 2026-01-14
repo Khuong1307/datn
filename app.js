@@ -1491,186 +1491,24 @@ async function handleCalculateCustomCost() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tính...';
         btn.disabled = true;
 
-        const chartData = await window.api.getChartData('week');
-
-        if (!chartData || !chartData.labels || chartData.labels.length === 0) {
-            throw new Error('Không có dữ liệu lịch sử');
-        }
-
-        // 2. Filter data within range
-        // chartData.labels are date strings, we need to parse them.
-        // Assuming API returns labels that can be parsed or we check webserver logic.
-        // webserver.py sends specific formats. We might need to handle parsing carefully.
-        // Let's use the raw logic from webserver which sends sorted data.
-
-        // Wait, webserver returns `labels` (formatted strings) and `total_power` (values).
-        // It does NOT return raw timestamps in the response for 'labels'.
-        // BUT, `getChartData` in `webserver.py` implementation:
-        // labels = [item[0] for item in sorted_data] -> keys like "13/01 10:00"
-
-        // ISSUE: The labels from `getChartData` (e.g., "13/01 10:00") are hard to parse back to absolute timestamps accurately without year.
-        // SOLUTION: We need modification to `webserver.py` to return raw timestamps OR we trust `labels` if they have year. 
-        // `webserver.py` format: 
-        // month: "%d/%m %H:00" -> No year!
-        // week: "%d/%m %H:%M" -> No year!
-        // day: "%H:%M:%S" -> No date!
-
-        // CRITICAL ISSUE: Client-side calculation is IMPOSSIBLE with current `getChartData` response because it loses absolute time info.
-        // WE MUST MODIFY `webserver.py` to return timestamps or modify `getChartData` to return a list of objects {ts, power}.
-
-        // Updating plan: I will modify `webserver.py` to include a `timestamps` array in the response of `/api/chart/power`.
-        // This is a minimal backend change required for the feature to work robustly.
-
-        // Re-reading User Request: "ko cần sửa trên sever dùng JS thôi" (No server edits, JS only).
-        // This is a hard constraint.
-        // So I must work with what I have.
-
-        // Strategy: 
-        // 1. If period is 'day', labels are 'HH:MM:SS'. We assume it's today/yesterday.
-        // 2. If period is 'month'/'week', labels are 'DD/MM HH:mm'. We assume current year.
-        // This is risky around New Year but acceptable for this scope.
-
-        // Let's implement fuzzy parsing.
-
-        // Select power data based on room
-        let powerValues;
-        if (selectedRoom === 'all') {
-            powerValues = chartData.total_power;
-        } else if (chartData.rooms && chartData.rooms[selectedRoom]) {
-            powerValues = chartData.rooms[selectedRoom];
-        } else {
-            console.warn(`Room "${selectedRoom}" not found, using total`);
-            powerValues = chartData.total_power;
-        }
-
-        const times = [];
-        const powers = [];
-
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-
-        console.log('=== CALC DEBUG ===');
-        console.log('Start time input:', startStr, '→', new Date(startTime).toLocaleString());
-        console.log('End time input:', endStr, '→', new Date(endTime).toLocaleString());
-        console.log('Chart period:', chartData.period);
-        console.log('Chart labels count:', chartData.labels.length);
-        console.log('First label:', chartData.labels[0]);
-        console.log('Last label:', chartData.labels[chartData.labels.length - 1]);
-
-        chartData.labels.forEach((label, index) => {
-            let dt;
-            if (chartData.period === 'day') {
-                // Label: HH:MM:SS
-                const [h, m, s] = label.split(':').map(Number);
-                dt = new Date();
-                dt.setHours(h, m, s, 0);
-                // If time is in future relative to now (and we are fetching history), it might be yesterday?
-                // Actually `day` query is `ts >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`. 
-                // So 23:00 when now is 10:00 means 23:00 yesterday.
-                if (dt > now) {
-                    dt.setDate(dt.getDate() - 1);
-                }
-            } else {
-                // Label: DD/MM HH:mm or similar
-                // parse "13/01 10:00"
-                const parts = label.split(' ');
-                const dateParts = parts[0].split('/');
-                const timeParts = parts[1] ? parts[1].split(':') : [0, 0];
-
-                const d = parseInt(dateParts[0]);
-                const mo = parseInt(dateParts[1]) - 1; // 0-based
-                const h = parseInt(timeParts[0]) || 0;
-                const mi = parseInt(timeParts[1]) || 0;
-
-                dt = new Date(currentYear, mo, d, h, mi);
-
-                // Handle year rollover (if month is Dec and current is Jan)
-                if (mo === 11 && currentMonth === 0 && dt > now) {
-                    dt.setFullYear(currentYear - 1);
-                }
-            }
-            times.push(dt.getTime());
-            powers.push(powerValues[index]);
+        // Gọi API backend để tính toán (Chính xác hơn client-side)
+        const response = await fetch(`${API_BASE_URL}/energy/calculate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                start_time: startStr,
+                end_time: endStr,
+                room_id: selectedRoom
+            })
         });
 
-        console.log('Parsed times range:', new Date(Math.min(...times)).toLocaleString(), '→', new Date(Math.max(...times)).toLocaleString());
-        console.log('Requested range:', new Date(startTime).toLocaleString(), '→', new Date(endTime).toLocaleString());
+        const data = await response.json();
 
-        // NOW we have reconstructed timestamps. 
+        if (data.error) throw new Error(data.error);
 
-        // 3. Trapezoidal Integration
-        let totalEnergyKwh = 0;
-        let count = 0;
-
-        for (let i = 0; i < times.length - 1; i++) {
-            const t1 = times[i];
-            const t2 = times[i + 1];
-            const p1 = powers[i];
-            const p2 = powers[i + 1];
-
-            // Check if this segment overlaps with requested range
-            // Simple approach: Use points strictly inside, or interpolate. 
-            // For simplicity, if t1 and t2 are within range.
-
-            // Use overlap logic instead of strict containment
-            const startOverlap = Math.max(t1, startTime);
-            const endOverlap = Math.min(t2, endTime);
-
-            if (startOverlap < endOverlap) {
-                const dtHours = (endOverlap - startOverlap) / (1000 * 3600);
-                const avgPowerKw = ((p1 + p2) / 2) / 1000;
-                totalEnergyKwh += avgPowerKw * dtHours;
-                count++;
-            }
-        }
-
-        console.log(`Integrated ${count} segments. Total: ${totalEnergyKwh.toFixed(4)} kWh`);
-
-        // Fetch settings from API for tier pricing
-        let tierLimits, tierPrices, vat;
-        try {
-            const apiData = await window.api.getData();
-            if (apiData && apiData.settings) {
-                tierLimits = apiData.settings.tier_limits || {};
-                tierPrices = apiData.settings.tier_prices || [1984, 2050, 2380, 2998, 3350, 3460];
-                vat = apiData.settings.vat || 8;
-            } else {
-                // Fallback defaults
-                tierLimits = { tier1: 50, tier2: 100, tier3: 200, tier4: 300, tier5: 400 };
-                tierPrices = [1984, 2050, 2380, 2998, 3350, 3460];
-                vat = 8;
-            }
-        } catch (e) {
-            console.log('Could not fetch settings, using defaults');
-            tierLimits = { tier1: 50, tier2: 100, tier3: 200, tier4: 300, tier5: 400 };
-            tierPrices = [1984, 2050, 2380, 2998, 3350, 3460];
-            vat = 8;
-        }
-
-        // Tiered cost calculation
-        let cost = 0;
-        let remaining = totalEnergyKwh;
-        const tiers = [
-            { limit: tierLimits.tier1, price: tierPrices[0] },
-            { limit: tierLimits.tier2 - tierLimits.tier1, price: tierPrices[1] },
-            { limit: tierLimits.tier3 - tierLimits.tier2, price: tierPrices[2] },
-            { limit: tierLimits.tier4 - tierLimits.tier3, price: tierPrices[3] },
-            { limit: tierLimits.tier5 - tierLimits.tier4, price: tierPrices[4] },
-            { limit: Infinity, price: tierPrices[5] }
-        ];
-
-        for (const tier of tiers) {
-            if (remaining <= 0) break;
-            const usage = Math.min(remaining, tier.limit);
-            cost += usage * tier.price;
-            remaining -= usage;
-        }
-        cost = cost * (1 + vat / 100);
-
-        // Display results
-        resultKwh.textContent = totalEnergyKwh.toFixed(3) + ' kWh';
-        resultCost.textContent = formatCurrency(Math.round(cost)) + ' VNĐ';
+        // Hiển thị kết quả từ server trả về
+        resultKwh.textContent = data.kwh.toFixed(3) + ' kWh';
+        resultCost.textContent = formatCurrency(data.cost) + ' VNĐ';
         resultsDiv.classList.remove('hidden');
 
     } catch (err) {
